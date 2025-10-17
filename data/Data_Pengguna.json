@@ -11,6 +11,13 @@
     "username": "riaz",
     "password": "riaz123",
     "role": "user",
-    "balance": 200000
+    "balance": 190000
+  },
+  {
+    "id": "U-0003",
+    "username": "lmao",
+    "password": "123",
+    "role": "user",
+    "balance": 150000
   }
 ]

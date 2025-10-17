@@ -16,7 +16,7 @@ PRODUCTS_FILE = os.path.join(DATA_DIR, "List_Konsol.json")
 TRANSACTIONS_FILE = os.path.join(DATA_DIR, "Data_Transaksi.json")
 
 # -----------------------------
-# Utilitas: load/save JSON
+# Utilitas: load/save file ke JSON
 # -----------------------------
 def load_json(path):
     if not os.path.exists(path):
@@ -32,7 +32,7 @@ def save_json(path, data):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
 # -----------------------------
-# Helper: ID generator & finders
+# ID generator, pencari id
 # -----------------------------
 def next_id(prefix, existing_ids):
     # Format: PREFIX-XXXX
@@ -62,7 +62,7 @@ def find_transaction(transactions, tid):
     return None
 
 # -----------------------------
-# Auth: register & login
+# register & login
 # -----------------------------
 def register(users):
     print("\n=== Registrasi Akun Baru ===")
@@ -107,13 +107,13 @@ def login(users):
     return None
 
 # -----------------------------
-# Tabel tampil
+# Tabel tampilan pretty table
 # -----------------------------
 def show_products_table(products):
     table = PrettyTable()
-    table.field_names = ["ID", "Nama", "Brand", "Tarif/Hari", "Stok"]
+    table.field_names = ["ID", "Nama", "Brand", "Tarif/Perjam", "Stok"]
     for p in products:
-        table.add_row([p["id"], p["name"], p["brand"], p["daily_rate"], p["stock"]])
+        table.add_row([p["id"], p["name"], p["brand"], p["perjam"], p["stock"]])
     print(table)
 
 def show_users_table(users):
@@ -128,20 +128,20 @@ def show_transactions_table(transactions):
     table.field_names = ["ID", "User", "Produk", "Hari", "Total", "Tgl", "Metode"]
     for t in transactions:
         table.add_row([
-            t["id"], t["user_id"], t["product_id"], t["days"],
+            t["id"], t["user_id"], t["product_id"], t["perjam"],
             t["total"], t["created_at"], t["method"]
         ])
     print(table)
 
 # -----------------------------
-# Admin: CRUD Products
+# Admin Bagian CRUD 
 # -----------------------------
 def admin_create_product(products):
     print("\n=== Tambah Produk ===")
     name = input("Nama produk: ").strip()
     brand = input("Brand: ").strip()
     try:
-        daily_rate = int(input("Tarif per hari (angka): ").strip())
+        perjam = int(input("Tarif perjam (angka): ").strip())
         stock = int(input("Stok (angka): ").strip())
     except ValueError:
         print("Tarif/Stok harus angka.")
@@ -151,7 +151,7 @@ def admin_create_product(products):
     pid = next_id("P", existing_ids)
     new_p = {
         "id": pid, "name": name, "brand": brand,
-        "daily_rate": daily_rate, "stock": stock
+        "perjam": perjam, "stock": stock
     }
     products.append(new_p)
     save_json(PRODUCTS_FILE, products)
@@ -167,13 +167,13 @@ def admin_update_product(products):
     print("Kosongkan input jika tidak ingin mengubah field tertentu.")
     name = input(f"Nama ({p['name']}): ").strip()
     brand = input(f"Brand ({p['brand']}): ").strip()
-    daily_rate_str = input(f"Tarif/Hari ({p['daily_rate']}): ").strip()
+    perjam_str = input(f"Tarif/Perjam ({p['perjam']}): ").strip()
     stock_str = input(f"Stok ({p['stock']}): ").strip()
 
     if name: p["name"] = name
     if brand: p["brand"] = brand
-    if daily_rate_str:
-        try: p["daily_rate"] = int(daily_rate_str)
+    if perjam_str:
+        try: p["perjam"] = int(perjam_str)
         except ValueError: print("Tarif harus angka. Diabaikan.")
     if stock_str:
         try: p["stock"] = int(stock_str)
@@ -198,7 +198,7 @@ def admin_list_products(products):
     show_products_table(products)
 
 # -----------------------------
-# Admin: CRUD Users (opsional, contoh)
+# Admin: CRUD User (opsional, contoh)
 # -----------------------------
 def admin_list_users(users):
     print("\n=== Daftar Pengguna ===")
@@ -245,7 +245,7 @@ def admin_delete_user(users, transactions):
     print(f"User {uid} dihapus.")
 
 # -----------------------------
-# User: fitur saldo & transaksi
+# User: fitur saldo dan transaksi
 # -----------------------------
 def user_topup_balance(current_user, users):
     print("\n=== Top Up Saldo E-money ===")
@@ -273,15 +273,15 @@ def user_rent_product(current_user, users, products, transactions):
         print("Stok habis.")
         return
     try:
-        days = int(input("Jumlah hari sewa: ").strip())
-        if days <= 0:
-            print("Hari sewa harus lebih dari 0.")
+        perjam = int(input("Jumlah sewa perjam: ").strip())
+        if perjam <= 0:
+            print("perjam harus lebih dari 0.")
             return
     except ValueError:
-        print("Hari sewa harus angka.")
+        print("sewa perjam harus angka.")
         return
 
-    total = product["daily_rate"] * days
+    total = product["perjam"] * perjam
     print(f"Total biaya: {total}")
     if current_user["balance"] < total:
         print("Saldo tidak cukup. Silakan top up terlebih dahulu.")
@@ -299,7 +299,7 @@ def user_rent_product(current_user, users, products, transactions):
         "id": tid,
         "user_id": current_user["id"],
         "product_id": product["id"],
-        "days": days,
+        "perjam": perjam,
         "total": total,
         "method": "E-money",
         "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -309,10 +309,10 @@ def user_rent_product(current_user, users, products, transactions):
 
     print("\n=== Invoice ===")
     table = PrettyTable()
-    table.field_names = ["Invoice ID", "User", "Produk", "Hari", "Tarif/Hari", "Total", "Metode", "Tanggal"]
+    table.field_names = ["Invoice ID", "User", "Produk", "Hari", "Tarif/perjam", "Total", "Metode", "Tanggal"]
     table.add_row([
-        trx["id"], current_user["username"], product["name"], days,
-        product["daily_rate"], total, trx["method"], trx["created_at"]
+        trx["id"], current_user["username"], product["name"], perjam,
+        product["perjam"], total, trx["method"], trx["created_at"]
     ])
     print(table)
     print("Terima kasih! Sewa berhasil.")
